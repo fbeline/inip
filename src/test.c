@@ -14,7 +14,7 @@ int test_inip_parse(void)
 			       "key A=valueA\n"
 			       "key B=valueB\n";
 
-	struct inip inip = {0};
+	struct inip inip = { 0 };
 
 	if (inip_parse(&inip, ini_data) != 0) {
 		printf("inip_parse() failed\n");

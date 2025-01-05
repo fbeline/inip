@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define NTOKEN 256
+
 enum token {
 	TOKEN_STRING,
 	TOKEN_LBRACKET,
@@ -39,29 +41,48 @@ static void str_trim(char *str)
 	end[1] = '\0';
 }
 
-static int inip_tokenize(const char *buffer, struct ini_token *tokens)
+static struct ini_token *inip_tokenize(const char *buffer)
 {
+	struct ini_token *tokens;
+	size_t capacity = NTOKEN;
+	size_t idx = 0;
+
 	const char *start;
 	const char *current;
+
+	if ((tokens = malloc(capacity * sizeof(struct ini_token))) == NULL) {
+		return NULL;
+	}
 
 	current = buffer;
 	while (*current != '\0') {
 		start = current;
+
+		if (idx >= capacity) {
+			capacity *= 2;
+			if ((tokens = realloc(
+				     tokens,
+				     capacity * sizeof(struct ini_token))) ==
+			    NULL) {
+				return NULL;
+			}
+		}
+
 		if (*current == '[') {
-			tokens->type = TOKEN_LBRACKET;
-			tokens->start = start;
-			tokens->length = 1;
-			tokens++;
+			tokens[idx].type = TOKEN_LBRACKET;
+			tokens[idx].start = start;
+			tokens[idx].length = 1;
+			idx++;
 		} else if (*current == ']') {
-			tokens->type = TOKEN_RBRACKET;
-			tokens->start = start;
-			tokens->length = 1;
-			tokens++;
+			tokens[idx].type = TOKEN_RBRACKET;
+			tokens[idx].start = start;
+			tokens[idx].length = 1;
+			idx++;
 		} else if (*current == '=') {
-			tokens->type = TOKEN_EQUAL;
-			tokens->start = start;
-			tokens->length = 1;
-			tokens++;
+			tokens[idx].type = TOKEN_EQUAL;
+			tokens[idx].start = start;
+			tokens[idx].length = 1;
+			idx++;
 		} else if (*current == ' ' || *current == '\t' ||
 			   *current == '\n') {
 			// skip whitespace
@@ -75,22 +96,38 @@ static int inip_tokenize(const char *buffer, struct ini_token *tokens)
 			       *current != '\0') {
 				current++;
 			}
-			tokens->type = TOKEN_STRING;
-			tokens->start = start;
-			tokens->length = current - start;
-			tokens++;
+			tokens[idx].type = TOKEN_STRING;
+			tokens[idx].start = start;
+			tokens[idx].length = current - start;
+			idx++;
 			continue;
 		}
 
 		current++;
 	}
 
-	tokens->type = TOKEN_EOF;
-	tokens->start = current;
-	tokens->length = 1;
-	tokens++;
+	tokens[idx].type = TOKEN_EOF;
+	tokens[idx].start = current;
+	tokens[idx].length = 1;
 
-	return 0;
+	return tokens;
+}
+
+static struct inip_section *create_section(struct ini_token *token)
+{
+	struct inip_section *section = malloc(sizeof(struct inip_section));
+	if (section == NULL) {
+		return NULL;
+	}
+
+	section->keys = NULL;
+	section->next = NULL;
+
+	strncpy(section->name, token->start, token->length);
+	section->name[token->length] = '\0';
+	str_trim(section->name);
+
+	return section;
 }
 
 static int inip_build(struct inip *ini, struct ini_token *tokens)
@@ -103,13 +140,9 @@ static int inip_build(struct inip *ini, struct ini_token *tokens)
 		if (tokens->type == TOKEN_LBRACKET) {
 			if ((++tokens)->type == TOKEN_STRING) {
 				struct inip_section *new_section =
-					malloc(sizeof(struct inip_section));
-				new_section->keys = NULL;
-				new_section->next = NULL;
-				strncpy(new_section->name, tokens->start,
-					tokens->length);
-				new_section->name[tokens->length] = '\0';
-				str_trim(new_section->name);
+					create_section(tokens);
+				if (new_section == NULL)
+					return 1;
 
 				if (ini->sections == NULL) {
 					ini->sections = new_section;
@@ -167,16 +200,17 @@ static int inip_build(struct inip *ini, struct ini_token *tokens)
 
 int inip_parse(struct inip *ini, const char *buffer)
 {
+	struct ini_token *tokens;
 	if (ini == NULL || buffer == NULL) {
 		return 1;
 	}
 
-	struct ini_token tokens[1024];
-	if (inip_tokenize(buffer, tokens) != 0) {
+	if ((tokens = inip_tokenize(buffer)) == NULL) {
 		return 1;
 	}
 
 	return inip_build(ini, tokens);
+	free(tokens);
 }
 
 const char *inip_get(struct inip *inip, const char *section, const char *key)
