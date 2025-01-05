@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int test_inip_parse(void)
+int test_parse(void)
 {
 	const char *ini_data = "[section1]\n"
 			       "key1 = value 1\n"
@@ -46,10 +46,41 @@ int test_inip_parse(void)
 	return 0;
 }
 
+int test_stringify(void)
+{
+	struct inip inip = { 0 };
+	const char *ini_data = "[ section1  ]\n"
+			       "key1=value 1 \n"
+			       "key2=value 2\n";
+
+	const char *ini_result = "[section1]\n"
+				 "key1 = value 1\n"
+				 "key2 = value 2\n";
+
+	if (inip_parse(&inip, ini_data) != 0) {
+		printf("inip_parse() failed\n");
+		return 1;
+	}
+
+	char output[512];
+	if (inip_stringify(&inip, output) != 0) {
+		printf("inip_stringify() failed\n");
+		return 1;
+	}
+
+	if (strcmp(output, ini_result) != 0) {
+		printf("inip_stringify() returned wrong data\n");
+		return 1;
+	}
+
+	return 0;
+}
+
 int main(void)
 {
 	int result = 0;
-	result += test_inip_parse();
+	result += test_parse();
+	result += test_stringify();
 
 	if (result == 0) {
 		printf("All tests passed\n");

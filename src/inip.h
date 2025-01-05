@@ -54,6 +54,15 @@ int inip_parse(struct inip *ini, const char *buffer);
 const char *inip_get(struct inip *inip, const char *section, const char *key);
 
 /**
+ * Converts the inip structure back into an INI formatted string.
+ *
+ * @param inip A pointer to the inip structure to be converted.
+ * @param buffer A string buffer to hold the resulting INI formatted string.
+ * @return An integer indicating the success or failure of the conversion operation.
+ */
+int inip_stringify(struct inip *inip, char *buffer);
+
+/**
  * Frees all memory associated with the provided inip structure.
  *
  * @param inip A pointer to the inip structure to be destroyed.

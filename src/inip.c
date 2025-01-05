@@ -213,6 +213,32 @@ int inip_parse(struct inip *ini, const char *buffer)
 	free(tokens);
 }
 
+int inip_stringify(struct inip *inip, char *buffer)
+{
+	if (inip == NULL || buffer == NULL) {
+		return 1;
+	}
+	buffer[0] = '\0';
+
+	struct inip_section *s = inip->sections;
+	while (s != NULL) {
+		strcat(buffer, "[");
+		strcat(buffer, s->name);
+		strcat(buffer, "]\n");
+		struct inip_key *k = s->keys;
+		while (k != NULL) {
+			strcat(buffer, k->name);
+			strcat(buffer, " = ");
+			strcat(buffer, k->value);
+			strcat(buffer, "\n");
+			k = k->next;
+		}
+		s = s->next;
+	}
+
+	return 0;
+}
+
 const char *inip_get(struct inip *inip, const char *section, const char *key)
 {
 	struct inip_section *s = inip->sections;
