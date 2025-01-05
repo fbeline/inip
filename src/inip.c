@@ -130,6 +130,29 @@ static struct inip_section *create_section(struct ini_token *token)
 	return section;
 }
 
+static struct inip_key *create_key(struct ini_token *token)
+{
+	struct inip_key *key = malloc(sizeof(struct inip_key));
+	if (key == NULL) {
+		return NULL;
+	}
+
+	key->next = NULL;
+
+	strncpy(key->name, token->start, token->length);
+	key->name[token->length] = '\0';
+	str_trim(key->name);
+
+	return key;
+}
+
+static void inip_key_set(struct inip_key *key, struct ini_token *token)
+{
+	strncpy(key->value, token->start, token->length);
+	key->value[token->length] = '\0';
+	str_trim(key->value);
+}
+
 static int inip_build(struct inip *ini, struct ini_token *tokens)
 {
 	ini->sections = NULL;
@@ -160,19 +183,14 @@ static int inip_build(struct inip *ini, struct ini_token *tokens)
 				return 1;
 			}
 		} else if (tokens->type == TOKEN_STRING) {
-			struct inip_key *new_key =
-				malloc(sizeof(struct inip_key));
-			strncpy(new_key->name, tokens->start, tokens->length);
-			new_key->name[tokens->length] = '\0';
-			str_trim(new_key->name);
-			new_key->next = NULL;
+			struct inip_key *new_key = create_key(tokens);
+
 			if ((++tokens)->type == TOKEN_EQUAL) {
 				if ((++tokens)->type == TOKEN_STRING) {
-					strncpy(new_key->value, tokens->start,
-						tokens->length);
-					new_key->value[tokens->length] = '\0';
-					str_trim(new_key->value);
+					inip_key_set(new_key, tokens);
+
 					if (current_section == NULL) {
+						free(new_key);
 						printf("Error: Key %s has no section\n",
 						       new_key->name);
 						return 1;
@@ -184,10 +202,12 @@ static int inip_build(struct inip *ini, struct ini_token *tokens)
 					}
 					current_key = new_key;
 				} else {
+					free(new_key);
 					printf("Error: Expected a value after '='\n");
 					return 1;
 				}
 			} else {
+				free(new_key);
 				printf("Error: Expected '=' after key name\n");
 				return 1;
 			}
