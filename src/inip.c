@@ -1,4 +1,4 @@
-#include "inip.h"
+#include "../include/inip.h"
 
 #include <ctype.h>
 #include <stdlib.h>
