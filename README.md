@@ -14,5 +14,10 @@ if (inip_parse(&inip, ini_data) != 0) {
 
 const char *value = inip_get(&ini, "section", "key");
 
+if (inip_set(&ini, "section", "key", "new_value") != 0) {
+    printf("inip_set() failed\n");
+    return 1;
+}
+
 inip_destroy(&ini);
 ```

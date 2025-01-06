@@ -235,6 +235,48 @@ int test_wrong_section_definition(void)
 	return 0;
 }
 
+int test_set_key(void)
+{
+	struct inip inip = { 0 };
+	const char *ini_data = "[section1]\n"
+			       "key1=value 1\n"
+			       "key2=value 2\n";
+
+	if (inip_parse(&inip, ini_data) != 0) {
+		printf("inip_parse() failed\n");
+		return 1;
+	}
+
+	inip_set(&inip, "section1", "key1", "new value");
+
+	// update key
+	const char *value = inip_get(&inip, "section1", "key1");
+	if (strcmp(value, "new value") != 0) {
+		printf("inip_get() returned wrong value\n");
+		return 1;
+	}
+
+	// create key
+	inip_set(&inip, "section1", "key3", "Value 3");
+	const char *key3_value = inip_get(&inip, "section1", "key3");
+	if (strcmp(key3_value, "Value 3") != 0) {
+		printf("inip_get() returned wrong value\n");
+		return 1;
+	}
+
+	// create section & key
+	inip_set(&inip, "new_section", "a", "value a");
+	const char *new_key_value = inip_get(&inip, "new_section", "a");
+	if (strcmp(new_key_value, "value a") != 0) {
+		printf("inip_get() returned wrong value\n");
+		return 1;
+	}
+
+	inip_destroy(&inip);
+
+	return 0;
+}
+
 int main(void)
 {
 	int result = 0;
@@ -247,6 +289,7 @@ int main(void)
 	result += test_section_without_name();
 	result += test_wrong_section_definition();
 	result += test_key_without_name();
+	result += test_set_key();
 
 	if (result == 0) {
 		printf("All tests passed\n");

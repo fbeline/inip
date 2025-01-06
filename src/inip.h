@@ -39,7 +39,7 @@ struct inip {
  *
  * @param ini A pointer to the inip structure to be populated.
  * @param buffer A string containing the INI data to be parsed.
- * @return An integer indicating the success or failure of the parsing operation.
+ * @return An integer indicating the success or failure of the parsing operation. 0 on success, 1 generic failure, 2 parsing failure.
  */
 int inip_parse(struct inip *ini, const char *buffer);
 
@@ -54,11 +54,22 @@ int inip_parse(struct inip *ini, const char *buffer);
 const char *inip_get(struct inip *inip, const char *section, const char *key);
 
 /**
+ * Sets the value associated with the given section and key in the ini file. If the section or key does not exist, they will be created.
+ *
+ * @param inip A pointer to the inip structure.
+ * @param section The name of the section to set the value in.
+ * @param key The name of the key to set the value for within the section.
+ * @param value The value to set for the specified section and key.
+ * @return An integer indicating the success or failure of the set operation. 0 on success, 1 on failure.
+ */
+int inip_set(struct inip *inip, const char *section, const char *key, const char *value);
+
+/**
  * Converts the inip structure back into an INI formatted string.
  *
  * @param inip A pointer to the inip structure to be converted.
  * @param buffer A string buffer to hold the resulting INI formatted string.
- * @return An integer indicating the success or failure of the conversion operation.
+ * @return An integer indicating the success or failure of the conversion operation. 0 on success, 1 on failure.
  */
 int inip_stringify(struct inip *inip, char *buffer);
 

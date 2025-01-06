@@ -46,6 +46,30 @@ static int is_inline_comment(const char *current)
 	       (*(current + 1) == ';' || *(current + 1) == '#');
 }
 
+static struct inip_section *get_section(struct inip *inip, const char *name)
+{
+	struct inip_section *section = inip->sections;
+	while (section != NULL) {
+		if (strcmp(section->name, name) == 0) {
+			return section;
+		}
+		section = section->next;
+	}
+	return NULL;
+}
+
+static struct inip_key *get_key(struct inip_section *section, const char *name)
+{
+	struct inip_key *key = section->keys;
+	while (key != NULL) {
+		if (strcmp(key->name, name) == 0) {
+			return key;
+		}
+		key = key->next;
+	}
+	return NULL;
+}
+
 static struct ini_token *inip_tokenize(const char *buffer)
 {
 	struct ini_token *tokens;
@@ -284,6 +308,40 @@ const char *inip_get(struct inip *inip, const char *section, const char *key)
 		s = s->next;
 	}
 	return NULL;
+}
+
+int inip_set(struct inip *inip, const char *section, const char *key,
+	     const char *value)
+{
+	struct inip_section *s = get_section(inip, section);
+	if (s == NULL) {
+		s = malloc(sizeof(struct inip_section));
+		if (s == NULL) {
+			return 1;
+		}
+		s->next = inip->sections;
+		inip->sections = s;
+		strncpy(s->name, section, INI_MAX_SIZE);
+		s->name[INI_MAX_SIZE - 1] = '\0';
+		s->keys = NULL;
+	}
+
+	struct inip_key *k = get_key(s, key);
+	if (k == NULL) {
+		k = malloc(sizeof(struct inip_key));
+		if (k == NULL) {
+			return 1;
+		}
+		k->next = s->keys;
+		s->keys = k;
+		strncpy(k->name, key, INI_MAX_SIZE);
+		k->name[INI_MAX_SIZE - 1] = '\0';
+	}
+
+	strncpy(k->value, value, INI_MAX_SIZE);
+	k->value[INI_MAX_SIZE - 1] = '\0';
+
+	return 0;
 }
 
 void inip_destroy(struct inip *inip)
