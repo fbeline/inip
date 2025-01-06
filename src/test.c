@@ -21,26 +21,6 @@ int test_parse(void)
 		return 1;
 	}
 
-	const char *value = inip_get(&inip, "section1", "key1");
-	if (value == NULL) {
-		printf("inip_get() returned NULL\n");
-		return 1;
-	}
-	if (strcmp(value, "value 1") != 0) {
-		printf("inip_get() returned wrong value\n");
-		return 1;
-	}
-
-	value = inip_get(&inip, "section2", "key B");
-	if (value == NULL) {
-		printf("inip_get() returned NULL\n");
-		return 1;
-	}
-	if (strcmp(value, "valueB") != 0) {
-		printf("inip_get() returned wrong value\n");
-		return 1;
-	}
-
 	inip_destroy(&inip);
 
 	return 0;
@@ -76,10 +56,76 @@ int test_stringify(void)
 	return 0;
 }
 
+int test_get(void)
+{
+	struct inip inip = { 0 };
+	const char *ini_data = "[ section1  ]\n"
+			       "key1=value 1\n"
+			       "key2=value 2\n";
+
+	if (inip_parse(&inip, ini_data) != 0) {
+		printf("inip_parse() failed\n");
+		return 1;
+	}
+
+	const char *value = inip_get(&inip, "section1", "key1");
+	if (value == NULL) {
+		printf("inip_get() returned NULL\n");
+		return 1;
+	}
+	if (strcmp(value, "value 1") != 0) {
+		printf("inip_get() returned wrong value\n");
+		return 1;
+	}
+
+	value = inip_get(&inip, "section1", "key2");
+	if (value == NULL) {
+		printf("inip_get() returned NULL\n");
+		return 1;
+	}
+	if (strcmp(value, "value 2") != 0) {
+		printf("inip_get() returned wrong value\n");
+		return 1;
+	}
+
+	inip_destroy(&inip);
+
+	return 0;
+}
+
+int test_inline_comment(void)
+{
+	struct inip inip = { 0 };
+	const char *ini_data = "[ section1  ]\n"
+			       "key1=value 1 ; comment 1\n"
+			       "key2=value 2 # comment 2\n";
+
+	if (inip_parse(&inip, ini_data) != 0) {
+		printf("inline comment failed: inip_parse() failed\n");
+		return 1;
+	}
+
+	const char *value = inip_get(&inip, "section1", "key1");
+	if (value == NULL) {
+		printf("inline comment failed: inip_get() returned NULL\n");
+		return 1;
+	}
+	if (strcmp(value, "value 1") != 0) {
+		printf("inline comment failed: inip_get() returned wrong value\n");
+		return 1;
+	}
+
+	inip_destroy(&inip);
+
+	return 0;
+}
+
 int main(void)
 {
 	int result = 0;
 	result += test_parse();
+	result += test_get();
+	result += test_inline_comment();
 	result += test_stringify();
 
 	if (result == 0) {

@@ -41,6 +41,12 @@ static void str_trim(char *str)
 	end[1] = '\0';
 }
 
+static int is_inline_comment(const char *current)
+{
+	return *current == ' ' &&
+	       (*(current + 1) == ';' || *(current + 1) == '#');
+}
+
 static struct ini_token *inip_tokenize(const char *buffer)
 {
 	struct ini_token *tokens;
@@ -86,14 +92,15 @@ static struct ini_token *inip_tokenize(const char *buffer)
 		} else if (*current == ' ' || *current == '\t' ||
 			   *current == '\n') {
 			// skip whitespace
-		} else if (*current == ';') {
+		} else if (*current == ';' || *current == '#') {
 			while (*current != '\n' && *current != '\0') {
 				current++;
 			}
 		} else {
 			while (*current != '=' && *current != ']' &&
 			       *current != '\t' && *current != '\n' &&
-			       *current != '\0') {
+			       *current != '\0' &&
+			       !is_inline_comment(current)) {
 				current++;
 			}
 			tokens[idx].type = TOKEN_STRING;
@@ -107,8 +114,6 @@ static struct ini_token *inip_tokenize(const char *buffer)
 	}
 
 	tokens[idx].type = TOKEN_EOF;
-	tokens[idx].start = current;
-	tokens[idx].length = 1;
 
 	return tokens;
 }
@@ -229,8 +234,10 @@ int inip_parse(struct inip *ini, const char *buffer)
 		return 1;
 	}
 
-	return inip_build(ini, tokens);
+	int result = inip_build(ini, tokens);
 	free(tokens);
+
+	return result;
 }
 
 int inip_stringify(struct inip *inip, char *buffer)
