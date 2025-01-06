@@ -157,6 +157,84 @@ int test_no_section_file(void)
 	return 0;
 }
 
+int test_key_whitout_value(void)
+{
+	struct inip inip = { 0 };
+	const char *ini_data = "[section1]\n"
+			       "key1=\n"
+			       "key2=value 2\n";
+
+	if (inip_parse(&inip, ini_data) != 2) {
+		printf("key whitout value failed: inip_parse() should have failed\n");
+		return 1;
+	}
+
+	return 0;
+}
+
+int test_key_without_name(void)
+{
+	struct inip inip = { 0 };
+	const char *ini_data = "[section1]\n"
+			       "=value 1\n"
+			       "key2=value 2\n";
+
+	if (inip_parse(&inip, ini_data) != 2) {
+		printf("key without name failed: inip_parse() should have failed\n");
+		return 1;
+	}
+
+	return 0;
+}
+
+int test_section_without_name(void)
+{
+	struct inip inip = { 0 };
+	const char *ini_data = "[]\n"
+			       "key1=value 1\n"
+			       "key2=value 2\n";
+
+	if (inip_parse(&inip, ini_data) != 2) {
+		printf("section without name failed: inip_parse() should have failed\n");
+		return 1;
+	}
+
+	return 0;
+}
+
+int test_wrong_section_definition(void)
+{
+	struct inip inip = { 0 };
+	const char *ini_data = "[section1\n"
+			       "key1=value 1\n"
+			       "key2=value 2\n";
+
+	if (inip_parse(&inip, ini_data) != 2) {
+		printf("wrong section definition failed: inip_parse() should have failed\n");
+		return 1;
+	}
+
+	const char *ini_data2 = "section1]\n"
+				"key1=value 1\n"
+				"key2=value 2\n";
+
+	if (inip_parse(&inip, ini_data2) != 2) {
+		printf("wrong section definition failed: inip_parse() should have failed\n");
+		return 1;
+	}
+
+	const char *ini_data3 = "section1\n"
+				"key1=value 1\n"
+				"key2=value 2\n";
+
+	if (inip_parse(&inip, ini_data3) != 2) {
+		printf("wrong section definition failed: inip_parse() should have failed\n");
+		return 1;
+	}
+
+	return 0;
+}
+
 int main(void)
 {
 	int result = 0;
@@ -165,6 +243,10 @@ int main(void)
 	result += test_inline_comment();
 	result += test_stringify();
 	result += test_no_section_file();
+	result += test_key_whitout_value();
+	result += test_section_without_name();
+	result += test_wrong_section_definition();
+	result += test_key_without_name();
 
 	if (result == 0) {
 		printf("All tests passed\n");

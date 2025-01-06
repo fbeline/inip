@@ -1,8 +1,7 @@
 #include "inip.h"
 
-#include <stdlib.h>
 #include <ctype.h>
-#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define NTOKEN 256
@@ -170,7 +169,7 @@ static int inip_build(struct inip *ini, struct ini_token *tokens)
 				struct inip_section *new_section =
 					create_section(tokens);
 				if (new_section == NULL)
-					return 1;
+					return 2;
 
 				if (ini->sections == NULL) {
 					ini->sections = new_section;
@@ -179,15 +178,12 @@ static int inip_build(struct inip *ini, struct ini_token *tokens)
 				}
 				current_section = new_section;
 			} else {
-				printf("Error: Expected a section name after '['\n");
 				inip_destroy(ini);
-				return 1;
+				return 2;
 			}
 			if ((++tokens)->type != TOKEN_RBRACKET) {
-				printf("Error: Expected ']' after section name: %s\n",
-				       current_section->name);
 				inip_destroy(ini);
-				return 1;
+				return 2;
 			}
 		} else if (tokens->type == TOKEN_STRING) {
 			struct inip_key *new_key = create_key(tokens);
@@ -211,16 +207,14 @@ static int inip_build(struct inip *ini, struct ini_token *tokens)
 					}
 					current_key = new_key;
 				} else {
-					printf("Error: Expected a value after '='\n");
 					free(new_key);
 					inip_destroy(ini);
-					return 1;
+					return 2;
 				}
 			} else {
-				printf("Error: Expected '=' after key name\n");
 				free(new_key);
 				inip_destroy(ini);
-				return 1;
+				return 2;
 			}
 		}
 		tokens++;
