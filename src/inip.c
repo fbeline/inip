@@ -193,7 +193,7 @@ static int inip_build(struct inip *ini, struct ini_token *tokens)
 				struct inip_section *new_section =
 					create_section(tokens);
 				if (new_section == NULL)
-					return 2;
+					return 1;
 
 				if (ini->sections == NULL) {
 					ini->sections = new_section;
@@ -219,6 +219,13 @@ static int inip_build(struct inip *ini, struct ini_token *tokens)
 					if (current_section == NULL) {
 						current_section = malloc(sizeof(
 							struct inip_section));
+
+						if (current_section == NULL) {
+							free(new_key);
+							inip_destroy(ini);
+							return 1;
+						}
+
 						current_section->next = NULL;
 						current_section->name[0] = '\0';
 						current_section->keys = new_key;
