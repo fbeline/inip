@@ -180,11 +180,13 @@ static int inip_build(struct inip *ini, struct ini_token *tokens)
 				current_section = new_section;
 			} else {
 				printf("Error: Expected a section name after '['\n");
+				inip_destroy(ini);
 				return 1;
 			}
 			if ((++tokens)->type != TOKEN_RBRACKET) {
 				printf("Error: Expected ']' after section name: %s\n",
 				       current_section->name);
+				inip_destroy(ini);
 				return 1;
 			}
 		} else if (tokens->type == TOKEN_STRING) {
@@ -195,25 +197,29 @@ static int inip_build(struct inip *ini, struct ini_token *tokens)
 					inip_key_set(new_key, tokens);
 
 					if (current_section == NULL) {
-						free(new_key);
-						printf("Error: Key %s has no section\n",
-						       new_key->name);
-						return 1;
-					}
-					if (current_section->keys == NULL) {
+						current_section = malloc(sizeof(
+							struct inip_section));
+						current_section->next = NULL;
+						current_section->name[0] = '\0';
+						current_section->keys = new_key;
+						ini->sections = current_section;
+					} else if (current_section->keys ==
+						   NULL) {
 						current_section->keys = new_key;
 					} else {
 						current_key->next = new_key;
 					}
 					current_key = new_key;
 				} else {
-					free(new_key);
 					printf("Error: Expected a value after '='\n");
+					free(new_key);
+					inip_destroy(ini);
 					return 1;
 				}
 			} else {
-				free(new_key);
 				printf("Error: Expected '=' after key name\n");
+				free(new_key);
+				inip_destroy(ini);
 				return 1;
 			}
 		}
@@ -249,9 +255,11 @@ int inip_stringify(struct inip *inip, char *buffer)
 
 	struct inip_section *s = inip->sections;
 	while (s != NULL) {
-		strcat(buffer, "[");
-		strcat(buffer, s->name);
-		strcat(buffer, "]\n");
+		if (strlen(s->name) > 0) {
+			strcat(buffer, "[");
+			strcat(buffer, s->name);
+			strcat(buffer, "]\n");
+		}
 		struct inip_key *k = s->keys;
 		while (k != NULL) {
 			strcat(buffer, k->name);

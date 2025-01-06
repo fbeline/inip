@@ -30,6 +30,7 @@ int test_stringify(void)
 {
 	struct inip inip = { 0 };
 	const char *ini_data = "[ section1  ]\n"
+			       "# some comment\n"
 			       "key1=value 1 \n"
 			       "key2=value 2\n";
 
@@ -120,6 +121,42 @@ int test_inline_comment(void)
 	return 0;
 }
 
+int test_no_section_file(void)
+{
+	struct inip inip = { 0 };
+	const char *ini_data = "key1 = value 1\n"
+			       "key2 = value 2\n"
+			       "[section1]\n"
+			       "key3 = value 3\n";
+
+	if (inip_parse(&inip, ini_data) != 0) {
+		printf("no section failed: inip_parse() failed\n");
+		return 1;
+	}
+
+	const char *value = inip_get(&inip, "", "key1");
+	if (strcmp(value, "value 1") != 0) {
+		printf("no section failed: inip_get() returned wrong value\n");
+		return 1;
+	}
+
+	char output[512];
+	if (inip_stringify(&inip, output) != 0) {
+		printf("no section failed: inip_stringify() failed\n");
+		return 1;
+	}
+
+	if (strcmp(output, ini_data) != 0) {
+		printf("%s", output);
+		printf("no section failed: inip_stringify() returned wrong data\n");
+		return 1;
+	}
+
+	inip_destroy(&inip);
+
+	return 0;
+}
+
 int main(void)
 {
 	int result = 0;
@@ -127,6 +164,7 @@ int main(void)
 	result += test_get();
 	result += test_inline_comment();
 	result += test_stringify();
+	result += test_no_section_file();
 
 	if (result == 0) {
 		printf("All tests passed\n");
