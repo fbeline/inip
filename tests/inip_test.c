@@ -54,6 +54,8 @@ int test_stringify(void)
 		return 1;
 	}
 
+	inip_destroy(&inip);
+
 	return 0;
 }
 
